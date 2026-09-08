@@ -39,6 +39,12 @@ export default async function ObraPage({
         >
           Gastos
         </Link>
+        <Link
+          href={`/obras/${obra.id}/validaciones`}
+          className="rounded-full border border-black/[.08] px-4 py-2 hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-white/[.08]"
+        >
+          Puntos de atención
+        </Link>
       </nav>
     </div>
   );
