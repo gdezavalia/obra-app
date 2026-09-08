@@ -9,6 +9,7 @@ function leerCampos(formData: FormData) {
 
   return {
     paquete_id: (formData.get("paquete_id") as string) || null,
+    revision_id: (formData.get("revision_id") as string) || null,
     fecha: formData.get("fecha") as string,
     categoria: formData.get("categoria") as string,
     descripcion: (formData.get("descripcion") as string) || null,

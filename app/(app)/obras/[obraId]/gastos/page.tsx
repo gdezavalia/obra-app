@@ -34,20 +34,25 @@ export default async function GastosPage({
 
   if (!obra) notFound();
 
-  const [{ data: gastos, error }, { data: paquetes }] = await Promise.all([
-    supabase
-      .from("gastos")
-      .select(
-        "id, fecha, categoria, descripcion, proveedor, monto, moneda, paquete_id, paquetes(codigo, nombre)",
-      )
-      .eq("obra_id", obraId)
-      .order("fecha", { ascending: false }),
-    supabase
-      .from("paquetes")
-      .select("id, codigo, nombre")
-      .eq("obra_id", obraId)
-      .order("codigo"),
-  ]);
+  const [{ data: gastos, error }, { data: paquetes }, { data: revisiones }] =
+    await Promise.all([
+      supabase
+        .from("gastos")
+        .select(
+          "id, fecha, categoria, descripcion, proveedor, monto, moneda, paquete_id, paquetes(codigo, nombre)",
+        )
+        .eq("obra_id", obraId)
+        .order("fecha", { ascending: false }),
+      supabase
+        .from("paquetes")
+        .select("id, codigo, nombre")
+        .eq("obra_id", obraId)
+        .order("codigo"),
+      supabase
+        .from("revisiones_presupuesto")
+        .select("id, monto_nuevo, estado, paquetes!inner(obra_id, codigo)")
+        .eq("paquetes.obra_id", obraId),
+    ]);
 
   return (
     <div className="mx-auto w-full max-w-4xl px-6 py-8">
@@ -179,6 +184,30 @@ export default async function GastosPage({
                 ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Adicional asociado (opcional)
+            </label>
+            <select
+              name="revision_id"
+              defaultValue=""
+              className="w-full rounded border border-black/[.08] bg-transparent px-3 py-2 text-sm dark:border-white/[.145]"
+            >
+              <option value="">— ninguno —</option>
+              {revisiones?.map((r) => {
+                const paquete = Array.isArray(r.paquetes)
+                  ? r.paquetes[0]
+                  : r.paquetes;
+                return (
+                  <option key={r.id} value={r.id}>
+                    {paquete?.codigo} · {r.monto_nuevo?.toLocaleString("es-AR")}{" "}
+                    ARS ({r.estado})
+                  </option>
+                );
+              })}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
