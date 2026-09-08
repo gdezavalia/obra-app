@@ -91,6 +91,12 @@ export default async function PaquetesPage({
                   </td>
                   <td className="py-2 text-right">
                     <Link
+                      href={`/obras/${obraId}/paquetes/${p.id}/revisiones`}
+                      className="mr-3 underline underline-offset-2"
+                    >
+                      Adicionales
+                    </Link>
+                    <Link
                       href={`/obras/${obraId}/paquetes/${p.id}/editar`}
                       className="mr-3 underline underline-offset-2"
                     >
