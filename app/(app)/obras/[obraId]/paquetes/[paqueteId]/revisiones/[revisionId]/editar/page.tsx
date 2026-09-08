@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Field, Input } from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 import { actualizarAdicional } from "../../actions";
 
@@ -55,21 +56,10 @@ export default async function EditarAdicionalPage({
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Monto anterior">
-            <Input
-              type="number"
-              step="0.01"
-              name="monto_anterior"
-              defaultValue={revision.monto_anterior ?? ""}
-            />
+            <MoneyInput name="monto_anterior" defaultValue={revision.monto_anterior} />
           </Field>
           <Field label="Monto nuevo">
-            <Input
-              type="number"
-              step="0.01"
-              name="monto_nuevo"
-              required
-              defaultValue={revision.monto_nuevo ?? ""}
-            />
+            <MoneyInput name="monto_nuevo" required defaultValue={revision.monto_nuevo} />
           </Field>
         </div>
 

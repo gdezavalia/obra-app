@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Field, Input, Select } from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 import { actualizarPaquete } from "../../actions";
 
@@ -91,12 +92,7 @@ export default async function EditarPaquetePage({
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Presupuesto base (opcional)">
-            <Input
-              type="number"
-              step="0.01"
-              name="presupuesto_base"
-              defaultValue={paquete.presupuesto_base ?? ""}
-            />
+            <MoneyInput name="presupuesto_base" defaultValue={paquete.presupuesto_base} />
           </Field>
           <Field label="Moneda">
             <Select name="moneda" defaultValue={paquete.moneda ?? "ARS"}>

@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Field, Input, Select } from "@/components/ui/field";
+import { Field, Input, Select, Textarea } from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
+import { CamposPaqueteYRevision } from "@/components/campos-paquete-revision";
+import { CampoProveedor } from "@/components/campo-proveedor";
 import { actualizarGasto } from "../../actions";
 
 const CATEGORIAS = [
@@ -30,24 +33,26 @@ export default async function EditarGastoPage({
   const { data: gasto } = await supabase
     .from("gastos")
     .select(
-      "id, paquete_id, revision_id, fecha, categoria, descripcion, proveedor, pagado_por, forma_pago, monto, moneda, cotizacion_usd_dia, link_factura, link_comprobante_pago",
+      "id, paquete_id, revision_id, proveedor_id, fecha, categoria, descripcion, pagado_por, forma_pago, monto, moneda, cotizacion_usd_dia, link_factura, link_comprobante_pago",
     )
     .eq("id", gastoId)
     .single();
 
   if (!gasto) notFound();
 
-  const [{ data: paquetes }, { data: revisiones }] = await Promise.all([
-    supabase
-      .from("paquetes")
-      .select("id, codigo, nombre")
-      .eq("obra_id", obraId)
-      .order("codigo"),
-    supabase
-      .from("revisiones_presupuesto")
-      .select("id, monto_nuevo, estado, paquetes!inner(obra_id, codigo)")
-      .eq("paquetes.obra_id", obraId),
-  ]);
+  const [{ data: paquetes }, { data: revisiones }, { data: proveedores }] =
+    await Promise.all([
+      supabase
+        .from("paquetes")
+        .select("id, codigo, nombre")
+        .eq("obra_id", obraId)
+        .order("codigo"),
+      supabase
+        .from("revisiones_presupuesto")
+        .select("id, paquete_id, monto_nuevo, estado, paquetes!inner(obra_id)")
+        .eq("paquetes.obra_id", obraId),
+      supabase.from("proveedores").select("id, nombre").order("nombre"),
+    ]);
 
   return (
     <div className="mx-auto w-full max-w-2xl px-6 py-8">
@@ -70,40 +75,16 @@ export default async function EditarGastoPage({
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Fecha">
-            <Input type="date" name="fecha" required defaultValue={gasto.fecha} />
-          </Field>
-          <Field label="Paquete">
-            <Select name="paquete_id" required defaultValue={gasto.paquete_id ?? ""}>
-              <option value="" disabled>
-                Elegir paquete
-              </option>
-              {paquetes?.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.codigo} · {p.nombre}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </div>
-
-        <Field label="Adicional asociado (opcional)">
-          <Select name="revision_id" defaultValue={gasto.revision_id ?? ""}>
-            <option value="">— ninguno —</option>
-            {revisiones?.map((r) => {
-              const paquete = Array.isArray(r.paquetes)
-                ? r.paquetes[0]
-                : r.paquetes;
-              return (
-                <option key={r.id} value={r.id}>
-                  {paquete?.codigo} · {r.monto_nuevo?.toLocaleString("es-AR")}{" "}
-                  ARS ({r.estado})
-                </option>
-              );
-            })}
-          </Select>
+        <Field label="Fecha">
+          <Input type="date" name="fecha" required defaultValue={gasto.fecha} />
         </Field>
+
+        <CamposPaqueteYRevision
+          paquetes={paquetes ?? []}
+          revisiones={revisiones ?? []}
+          defaultPaqueteId={gasto.paquete_id ?? ""}
+          defaultRevisionId={gasto.revision_id ?? ""}
+        />
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Categoría">
@@ -115,24 +96,19 @@ export default async function EditarGastoPage({
               ))}
             </Select>
           </Field>
-          <Field label="Proveedor">
-            <Input type="text" name="proveedor" defaultValue={gasto.proveedor ?? ""} />
-          </Field>
+          <CampoProveedor
+            proveedores={proveedores ?? []}
+            defaultProveedorId={gasto.proveedor_id ?? ""}
+          />
         </div>
 
         <Field label="Descripción">
-          <Input type="text" name="descripcion" defaultValue={gasto.descripcion ?? ""} />
+          <Textarea name="descripcion" defaultValue={gasto.descripcion ?? ""} />
         </Field>
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Monto">
-            <Input
-              type="number"
-              step="0.01"
-              name="monto"
-              required
-              defaultValue={gasto.monto}
-            />
+            <MoneyInput name="monto" required defaultValue={gasto.monto} />
           </Field>
           <Field label="Moneda">
             <Select name="moneda" defaultValue={gasto.moneda}>

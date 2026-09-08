@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Field, Input } from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 import { crearAdicional } from "../actions";
 
@@ -68,15 +69,10 @@ export default async function NuevoAdicionalPage({
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Monto anterior">
-            <Input
-              type="number"
-              step="0.01"
-              name="monto_anterior"
-              defaultValue={vigente || ""}
-            />
+            <MoneyInput name="monto_anterior" defaultValue={vigente || null} />
           </Field>
           <Field label="Monto nuevo">
-            <Input type="number" step="0.01" name="monto_nuevo" required />
+            <MoneyInput name="monto_nuevo" required />
           </Field>
         </div>
 

@@ -3,6 +3,26 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+async function resolverProveedorId(
+  supabase: SupabaseClient,
+  formData: FormData,
+): Promise<string | null> {
+  const nuevo = (formData.get("proveedor_nuevo") as string)?.trim();
+
+  if (nuevo) {
+    const { data, error } = await supabase
+      .from("proveedores")
+      .upsert({ nombre: nuevo }, { onConflict: "arquitecta_id,nombre" })
+      .select("id")
+      .single();
+    if (error) throw error;
+    return data.id;
+  }
+
+  return (formData.get("proveedor_id") as string) || null;
+}
 
 function leerCampos(formData: FormData) {
   const cotizacion_usd_dia = formData.get("cotizacion_usd_dia") as string;
@@ -13,7 +33,6 @@ function leerCampos(formData: FormData) {
     fecha: formData.get("fecha") as string,
     categoria: formData.get("categoria") as string,
     descripcion: (formData.get("descripcion") as string) || null,
-    proveedor: (formData.get("proveedor") as string) || null,
     pagado_por: (formData.get("pagado_por") as string) || null,
     forma_pago: (formData.get("forma_pago") as string) || null,
     monto: Number(formData.get("monto")),
@@ -28,10 +47,11 @@ function leerCampos(formData: FormData) {
 export async function crearGasto(formData: FormData) {
   const obra_id = formData.get("obra_id") as string;
   const supabase = await createClient();
+  const proveedor_id = await resolverProveedorId(supabase, formData);
 
   const { error } = await supabase
     .from("gastos")
-    .insert({ obra_id, ...leerCampos(formData) });
+    .insert({ obra_id, proveedor_id, ...leerCampos(formData) });
 
   if (error) {
     redirect(
@@ -47,10 +67,11 @@ export async function actualizarGasto(formData: FormData) {
   const id = formData.get("id") as string;
   const obra_id = formData.get("obra_id") as string;
   const supabase = await createClient();
+  const proveedor_id = await resolverProveedorId(supabase, formData);
 
   const { error } = await supabase
     .from("gastos")
-    .update(leerCampos(formData))
+    .update({ proveedor_id, ...leerCampos(formData) })
     .eq("id", id);
 
   if (error) {

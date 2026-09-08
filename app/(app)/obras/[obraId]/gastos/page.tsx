@@ -31,7 +31,7 @@ export default async function GastosPage({
   const { data: gastos, error } = await supabase
     .from("gastos")
     .select(
-      "id, fecha, categoria, descripcion, proveedor, monto, moneda, paquete_id, paquetes(codigo, nombre)",
+      "id, fecha, categoria, descripcion, proveedor, monto, moneda, paquete_id, paquetes(codigo, nombre), proveedores(nombre)",
     )
     .eq("obra_id", obraId)
     .order("fecha", { ascending: false });
@@ -92,6 +92,10 @@ export default async function GastosPage({
               const paquete = Array.isArray(g.paquetes)
                 ? g.paquetes[0]
                 : g.paquetes;
+              const proveedorVinculado = Array.isArray(g.proveedores)
+                ? g.proveedores[0]
+                : g.proveedores;
+              const proveedor = proveedorVinculado?.nombre ?? g.proveedor;
               return (
                 <tr
                   key={g.id}
@@ -106,9 +110,7 @@ export default async function GastosPage({
                   <td className="py-2 pr-4 text-muted">
                     {CATEGORIAS[g.categoria] ?? g.categoria}
                   </td>
-                  <td className="py-2 pr-4 text-muted">
-                    {g.proveedor ?? "—"}
-                  </td>
+                  <td className="py-2 pr-4 text-muted">{proveedor ?? "—"}</td>
                   <td className="py-2 pr-4 whitespace-nowrap">
                     {g.monto.toLocaleString("es-AR")} {g.moneda}
                   </td>

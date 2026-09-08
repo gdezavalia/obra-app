@@ -64,3 +64,15 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
+
+/* El ícono del datepicker nativo se pinta oscuro por defecto y queda
+   invisible sobre nuestros inputs oscuros si no avisamos el esquema. */
+input[type="date"] {
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  input[type="date"] {
+    color-scheme: dark;
+  }
+}

@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Field, Input, Select } from "@/components/ui/field";
+import { Field, Input, Select, Textarea } from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
+import { CamposPaqueteYRevision } from "@/components/campos-paquete-revision";
+import { CampoProveedor } from "@/components/campo-proveedor";
 import { crearGasto } from "../actions";
 
 const CATEGORIAS = [
@@ -35,17 +38,19 @@ export default async function NuevoGastoPage({
 
   if (!obra) notFound();
 
-  const [{ data: paquetes }, { data: revisiones }] = await Promise.all([
-    supabase
-      .from("paquetes")
-      .select("id, codigo, nombre")
-      .eq("obra_id", obraId)
-      .order("codigo"),
-    supabase
-      .from("revisiones_presupuesto")
-      .select("id, monto_nuevo, estado, paquetes!inner(obra_id, codigo)")
-      .eq("paquetes.obra_id", obraId),
-  ]);
+  const [{ data: paquetes }, { data: revisiones }, { data: proveedores }] =
+    await Promise.all([
+      supabase
+        .from("paquetes")
+        .select("id, codigo, nombre")
+        .eq("obra_id", obraId)
+        .order("codigo"),
+      supabase
+        .from("revisiones_presupuesto")
+        .select("id, paquete_id, monto_nuevo, estado, paquetes!inner(obra_id)")
+        .eq("paquetes.obra_id", obraId),
+      supabase.from("proveedores").select("id, nombre").order("nombre"),
+    ]);
 
   return (
     <div className="mx-auto w-full max-w-2xl px-6 py-8">
@@ -67,40 +72,14 @@ export default async function NuevoGastoPage({
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Fecha">
-            <Input type="date" name="fecha" required />
-          </Field>
-          <Field label="Paquete">
-            <Select name="paquete_id" required defaultValue="">
-              <option value="" disabled>
-                Elegir paquete
-              </option>
-              {paquetes?.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.codigo} · {p.nombre}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </div>
-
-        <Field label="Adicional asociado (opcional)">
-          <Select name="revision_id" defaultValue="">
-            <option value="">— ninguno —</option>
-            {revisiones?.map((r) => {
-              const paquete = Array.isArray(r.paquetes)
-                ? r.paquetes[0]
-                : r.paquetes;
-              return (
-                <option key={r.id} value={r.id}>
-                  {paquete?.codigo} · {r.monto_nuevo?.toLocaleString("es-AR")}{" "}
-                  ARS ({r.estado})
-                </option>
-              );
-            })}
-          </Select>
+        <Field label="Fecha">
+          <Input type="date" name="fecha" required />
         </Field>
+
+        <CamposPaqueteYRevision
+          paquetes={paquetes ?? []}
+          revisiones={revisiones ?? []}
+        />
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Categoría">
@@ -112,18 +91,16 @@ export default async function NuevoGastoPage({
               ))}
             </Select>
           </Field>
-          <Field label="Proveedor">
-            <Input type="text" name="proveedor" />
-          </Field>
+          <CampoProveedor proveedores={proveedores ?? []} />
         </div>
 
         <Field label="Descripción">
-          <Input type="text" name="descripcion" />
+          <Textarea name="descripcion" />
         </Field>
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Monto">
-            <Input type="number" step="0.01" name="monto" required />
+            <MoneyInput name="monto" required />
           </Field>
           <Field label="Moneda">
             <Select name="moneda" defaultValue={obra.moneda_base}>
