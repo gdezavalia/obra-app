@@ -45,6 +45,12 @@ export default async function ObraPage({
         >
           Puntos de atención
         </Link>
+        <Link
+          href={`/obras/${obra.id}/reportes`}
+          className="rounded-full border border-black/[.08] px-4 py-2 hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-white/[.08]"
+        >
+          Reporte semanal
+        </Link>
       </nav>
     </div>
   );

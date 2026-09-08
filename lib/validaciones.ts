@@ -1,3 +1,5 @@
+import { calcularVigente } from "./presupuesto";
+
 export type Gasto = {
   id: string;
   fecha: string;
@@ -139,14 +141,7 @@ export function validarPresupuestoSuperado(
 ): Hallazgo[] {
   const hallazgos: Hallazgo[] = [];
   for (const p of paquetes) {
-    const deltasAprobados = revisiones
-      .filter(
-        (r) =>
-          r.paquete_id === p.id &&
-          (r.estado === "aprobado" || r.estado === "ejecutado"),
-      )
-      .reduce((acc, r) => acc + (r.monto_nuevo - (r.monto_anterior ?? 0)), 0);
-    const vigente = (p.presupuesto_base ?? 0) + deltasAprobados;
+    const vigente = calcularVigente(p.presupuesto_base, p.id, revisiones);
     if (vigente <= 0) continue;
     const ejecutado = gastos
       .filter((g) => g.paquete_id === p.id)
