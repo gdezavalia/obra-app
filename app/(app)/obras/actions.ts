@@ -17,7 +17,7 @@ export async function crearObra(formData: FormData) {
     .single();
 
   if (error) {
-    redirect(`/obras?error=${encodeURIComponent(error.message)}`);
+    redirect(`/obras/nueva?error=${encodeURIComponent(error.message)}`);
   }
 
   revalidatePath("/obras");

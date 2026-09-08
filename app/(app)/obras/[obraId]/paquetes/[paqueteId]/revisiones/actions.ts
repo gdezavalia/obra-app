@@ -27,7 +27,7 @@ export async function crearAdicional(formData: FormData) {
 
   if (error) {
     redirect(
-      `${rutaBase(obra_id, paquete_id)}?error=${encodeURIComponent(error.message)}`,
+      `${rutaBase(obra_id, paquete_id)}/nuevo?error=${encodeURIComponent(error.message)}`,
     );
   }
 

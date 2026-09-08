@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
+import { buttonVariants } from "@/components/ui/button";
 
 export default async function AppLayout({
   children,
@@ -13,14 +15,17 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <header className="flex items-center justify-between border-b border-black/[.08] px-6 py-3 dark:border-white/[.145]">
-        <span className="text-sm font-semibold text-black dark:text-zinc-50">
+      <header className="no-print flex items-center justify-between border-b border-border px-6 py-3">
+        <Link href="/obras" className="text-sm font-semibold text-foreground">
           Obra
-        </span>
-        <div className="flex items-center gap-3 text-sm text-zinc-600 dark:text-zinc-400">
+        </Link>
+        <div className="flex items-center gap-4 text-sm text-muted">
           <span>{user?.email}</span>
           <form action={signOut}>
-            <button type="submit" className="underline underline-offset-2">
+            <button
+              type="submit"
+              className={buttonVariants("ghost", "sm", "!px-0")}
+            >
               Cerrar sesión
             </button>
           </form>

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { importarPaquetes, type FilaImport } from "./actions";
 
 export default async function ImportarPaquetesPage({
@@ -37,19 +39,19 @@ export default async function ImportarPaquetesPage({
   const rechazados = reporte?.filter((f) => f.estado === "rechazado") ?? [];
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-6 py-8">
-      <p className="mb-1 text-sm text-zinc-500 dark:text-zinc-400">
+    <div className="mx-auto w-full max-w-2xl px-6 py-8">
+      <p className="mb-1 text-sm text-muted">
         <Link href={`/obras/${obraId}/paquetes`} className="hover:underline">
-          {obra.nombre} · Paquetes
+          ← {obra.nombre} · Paquetes
         </Link>
       </p>
-      <h1 className="mb-6 text-2xl font-semibold text-black dark:text-zinc-50">
+      <h1 className="mb-6 text-2xl font-semibold text-foreground">
         Importar paquetes desde CSV
       </h1>
 
       {!reporte && (
         <>
-          <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mb-4 text-sm text-muted">
             Columnas esperadas: <code>codigo</code>, <code>nombre</code>,{" "}
             <code>tipo</code> (trabajo / materiales / mixto),{" "}
             <code>presupuesto_base</code> (opcional), <code>moneda</code>{" "}
@@ -59,7 +61,7 @@ export default async function ImportarPaquetesPage({
           </p>
 
           {error && (
-            <p className="mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+            <p className="mb-4 rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
               {error}
             </p>
           )}
@@ -71,40 +73,34 @@ export default async function ImportarPaquetesPage({
               name="archivo"
               accept=".csv,text/csv"
               required
-              className="block w-full text-sm text-zinc-700 dark:text-zinc-300"
+              className="block w-full text-sm text-muted"
             />
-            <button
-              type="submit"
-              className="rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-            >
-              Importar
-            </button>
+            <Button type="submit">Importar</Button>
           </form>
         </>
       )}
 
       {reporte && (
         <>
-          <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="mb-4 text-sm text-muted">
             {aceptados.length} aceptados, {rechazados.length} rechazados.
           </p>
 
           {rechazados.length > 0 && (
             <div className="mb-6">
-              <h2 className="mb-2 text-sm font-semibold text-red-700 dark:text-red-400">
+              <h2 className="mb-2 text-sm font-semibold text-foreground">
                 Rechazados
               </h2>
               <table className="w-full text-sm">
                 <tbody>
                   {rechazados.map((f, i) => (
-                    <tr
-                      key={i}
-                      className="border-b border-black/[.05] dark:border-white/[.08]"
-                    >
-                      <td className="py-2 font-mono text-xs">{f.codigo}</td>
+                    <tr key={i} className="border-b border-border/60">
+                      <td className="py-2 font-mono text-xs text-muted">
+                        {f.codigo}
+                      </td>
                       <td className="py-2">{f.nombre}</td>
-                      <td className="py-2 text-red-600 dark:text-red-400">
-                        {f.motivo}
+                      <td className="py-2">
+                        <Badge tono="danger">{f.motivo}</Badge>
                       </td>
                     </tr>
                   ))}
@@ -115,17 +111,16 @@ export default async function ImportarPaquetesPage({
 
           {aceptados.length > 0 && (
             <div className="mb-6">
-              <h2 className="mb-2 text-sm font-semibold text-black dark:text-zinc-50">
+              <h2 className="mb-2 text-sm font-semibold text-foreground">
                 Aceptados
               </h2>
               <table className="w-full text-sm">
                 <tbody>
                   {aceptados.map((f, i) => (
-                    <tr
-                      key={i}
-                      className="border-b border-black/[.05] dark:border-white/[.08]"
-                    >
-                      <td className="py-2 font-mono text-xs">{f.codigo}</td>
+                    <tr key={i} className="border-b border-border/60">
+                      <td className="py-2 font-mono text-xs text-muted">
+                        {f.codigo}
+                      </td>
                       <td className="py-2">{f.nombre}</td>
                     </tr>
                   ))}
@@ -136,7 +131,7 @@ export default async function ImportarPaquetesPage({
 
           <Link
             href={`/obras/${obraId}/paquetes`}
-            className="rounded-full border border-black/[.08] px-4 py-2 text-sm hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-white/[.08]"
+            className={buttonVariants("secondary", "sm")}
           >
             Volver a paquetes
           </Link>

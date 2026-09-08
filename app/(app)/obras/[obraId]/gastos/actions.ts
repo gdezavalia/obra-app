@@ -35,7 +35,7 @@ export async function crearGasto(formData: FormData) {
 
   if (error) {
     redirect(
-      `/obras/${obra_id}/gastos?error=${encodeURIComponent(error.message)}`,
+      `/obras/${obra_id}/gastos/nuevo?error=${encodeURIComponent(error.message)}`,
     );
   }
 

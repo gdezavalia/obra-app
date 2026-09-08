@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { correrValidaciones, type Hallazgo } from "@/lib/validaciones";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const NOMBRES_REGLA: Record<number, string> = {
   1: "Monto fuera de magnitud",
@@ -75,34 +76,33 @@ export default async function ValidacionesPage({
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-8">
-      <p className="mb-1 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mb-1 text-sm text-muted">
         <Link href={`/obras/${obraId}`} className="hover:underline">
           {obra.nombre}
         </Link>
       </p>
-      <h1 className="mb-6 text-2xl font-semibold text-black dark:text-zinc-50">
+      <h1 className="mb-6 text-2xl font-semibold text-foreground">
         Puntos de atención
       </h1>
 
       {hallazgos.length === 0 && (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          No hay nada para revisar por ahora.
-        </p>
+        <EmptyState
+          titulo="No hay nada para revisar"
+          descripcion="Las validaciones corren sobre los gastos, paquetes y adicionales cargados hasta ahora."
+        />
       )}
 
       {[...porRegla.entries()].map(([regla, lista]) => (
         <div key={regla} className="mb-6">
-          <h2 className="mb-2 text-sm font-semibold text-black dark:text-zinc-50">
+          <h2 className="mb-2 text-sm font-semibold text-foreground">
             {NOMBRES_REGLA[regla] ?? `Regla ${regla}`}{" "}
-            <span className="font-normal text-zinc-500 dark:text-zinc-400">
-              ({lista.length})
-            </span>
+            <span className="font-normal text-warning">({lista.length})</span>
           </h2>
           <ul className="space-y-1">
             {lista.map((h, i) => (
               <li
                 key={i}
-                className="rounded border border-black/[.08] px-3 py-2 text-sm text-zinc-700 dark:border-white/[.145] dark:text-zinc-300"
+                className="rounded-lg border border-border px-3 py-2 text-sm text-foreground"
               >
                 {h.mensaje}
               </li>

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
-import { actualizarGasto } from "../../actions";
+import { crearGasto } from "../actions";
 
 const CATEGORIAS = [
   { value: "mano_de_obra", label: "Mano de obra" },
@@ -16,26 +16,24 @@ const PAGADO_POR = [
   { value: "arquitecta", label: "Arquitecta" },
 ];
 
-export default async function EditarGastoPage({
+export default async function NuevoGastoPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ obraId: string; gastoId: string }>;
+  params: Promise<{ obraId: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  const { obraId, gastoId } = await params;
+  const { obraId } = await params;
   const { error: formError } = await searchParams;
   const supabase = await createClient();
 
-  const { data: gasto } = await supabase
-    .from("gastos")
-    .select(
-      "id, paquete_id, revision_id, fecha, categoria, descripcion, proveedor, pagado_por, forma_pago, monto, moneda, cotizacion_usd_dia, link_factura, link_comprobante_pago",
-    )
-    .eq("id", gastoId)
+  const { data: obra } = await supabase
+    .from("obras")
+    .select("id, nombre, moneda_base")
+    .eq("id", obraId)
     .single();
 
-  if (!gasto) notFound();
+  if (!obra) notFound();
 
   const [{ data: paquetes }, { data: revisiones }] = await Promise.all([
     supabase
@@ -53,15 +51,14 @@ export default async function EditarGastoPage({
     <div className="mx-auto w-full max-w-2xl px-6 py-8">
       <p className="mb-1 text-sm text-muted">
         <Link href={`/obras/${obraId}/gastos`} className="hover:underline">
-          ← Gastos
+          ← {obra.nombre} · Gastos
         </Link>
       </p>
       <h1 className="mb-6 text-2xl font-semibold text-foreground">
-        Editar gasto
+        Nuevo gasto
       </h1>
 
-      <form action={actualizarGasto} className="space-y-4">
-        <input type="hidden" name="id" value={gasto.id} />
+      <form action={crearGasto} className="space-y-4">
         <input type="hidden" name="obra_id" value={obraId} />
 
         {formError && (
@@ -72,10 +69,10 @@ export default async function EditarGastoPage({
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Fecha">
-            <Input type="date" name="fecha" required defaultValue={gasto.fecha} />
+            <Input type="date" name="fecha" required />
           </Field>
           <Field label="Paquete">
-            <Select name="paquete_id" required defaultValue={gasto.paquete_id ?? ""}>
+            <Select name="paquete_id" required defaultValue="">
               <option value="" disabled>
                 Elegir paquete
               </option>
@@ -89,7 +86,7 @@ export default async function EditarGastoPage({
         </div>
 
         <Field label="Adicional asociado (opcional)">
-          <Select name="revision_id" defaultValue={gasto.revision_id ?? ""}>
+          <Select name="revision_id" defaultValue="">
             <option value="">— ninguno —</option>
             {revisiones?.map((r) => {
               const paquete = Array.isArray(r.paquetes)
@@ -107,7 +104,7 @@ export default async function EditarGastoPage({
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Categoría">
-            <Select name="categoria" required defaultValue={gasto.categoria}>
+            <Select name="categoria" required defaultValue="materiales">
               {CATEGORIAS.map((c) => (
                 <option key={c.value} value={c.value}>
                   {c.label}
@@ -116,26 +113,20 @@ export default async function EditarGastoPage({
             </Select>
           </Field>
           <Field label="Proveedor">
-            <Input type="text" name="proveedor" defaultValue={gasto.proveedor ?? ""} />
+            <Input type="text" name="proveedor" />
           </Field>
         </div>
 
         <Field label="Descripción">
-          <Input type="text" name="descripcion" defaultValue={gasto.descripcion ?? ""} />
+          <Input type="text" name="descripcion" />
         </Field>
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Monto">
-            <Input
-              type="number"
-              step="0.01"
-              name="monto"
-              required
-              defaultValue={gasto.monto}
-            />
+            <Input type="number" step="0.01" name="monto" required />
           </Field>
           <Field label="Moneda">
-            <Select name="moneda" defaultValue={gasto.moneda}>
+            <Select name="moneda" defaultValue={obra.moneda_base}>
               <option value="ARS">ARS</option>
               <option value="USD">USD</option>
             </Select>
@@ -144,10 +135,14 @@ export default async function EditarGastoPage({
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Forma de pago">
-            <Input type="text" name="forma_pago" defaultValue={gasto.forma_pago ?? ""} />
+            <Input
+              type="text"
+              name="forma_pago"
+              placeholder="Efectivo, transferencia..."
+            />
           </Field>
           <Field label="Pagado por">
-            <Select name="pagado_por" defaultValue={gasto.pagado_por ?? ""}>
+            <Select name="pagado_por" defaultValue="">
               <option value="">— sin especificar —</option>
               {PAGADO_POR.map((p) => (
                 <option key={p.value} value={p.value}>
@@ -160,18 +155,14 @@ export default async function EditarGastoPage({
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Link factura">
-            <Input type="url" name="link_factura" defaultValue={gasto.link_factura ?? ""} />
+            <Input type="url" name="link_factura" />
           </Field>
           <Field label="Link comprobante de pago">
-            <Input
-              type="url"
-              name="link_comprobante_pago"
-              defaultValue={gasto.link_comprobante_pago ?? ""}
-            />
+            <Input type="url" name="link_comprobante_pago" />
           </Field>
         </div>
 
-        <Button type="submit">Guardar cambios</Button>
+        <Button type="submit">Guardar gasto</Button>
       </form>
     </div>
   );

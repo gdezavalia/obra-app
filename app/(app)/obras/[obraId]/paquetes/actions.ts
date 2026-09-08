@@ -29,7 +29,7 @@ export async function crearPaquete(formData: FormData) {
 
   if (error) {
     redirect(
-      `/obras/${obra_id}/paquetes?error=${encodeURIComponent(error.message)}`,
+      `/obras/${obra_id}/paquetes/nuevo?error=${encodeURIComponent(error.message)}`,
     );
   }
 

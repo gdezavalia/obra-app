@@ -164,7 +164,7 @@ export default async function VerReportePage({
       `}</style>
 
       <div className="no-print mb-6 flex items-center justify-between">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-muted">
           <Link href={`/obras/${obraId}/reportes`} className="hover:underline">
             ← Elegir otro rango
           </Link>
@@ -173,26 +173,26 @@ export default async function VerReportePage({
       </div>
 
       <header className="mb-8">
-        <h1 className="text-2xl font-semibold text-black dark:text-zinc-50">
+        <h1 className="text-2xl font-semibold text-foreground">
           {obra.nombre}
         </h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm text-muted">
           {obra.cliente} · {obra.direccion}
         </p>
-        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-2 text-sm text-muted">
           Reporte semanal — {desde} a {hasta}
         </p>
       </header>
 
       {/* 1. Movimientos de la semana */}
       <section className="mb-10">
-        <h2 className="mb-3 text-lg font-semibold text-black dark:text-zinc-50">
+        <h2 className="mb-3 text-lg font-semibold text-foreground">
           1. Movimientos de la semana
         </h2>
         <div className="mb-4 grid grid-cols-4 gap-3">
-          <div className="rounded border border-black/[.08] p-3 dark:border-white/[.145]">
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">Total</p>
-            <p className="text-lg font-semibold text-black dark:text-zinc-50">
+          <div className="rounded-lg border border-border p-3">
+            <p className="text-xs text-muted">Total</p>
+            <p className="text-lg font-semibold text-foreground">
               ${money(totalSemana)}
             </p>
           </div>
@@ -200,12 +200,12 @@ export default async function VerReportePage({
             (cat) => (
               <div
                 key={cat}
-                className="rounded border border-black/[.08] p-3 dark:border-white/[.145]"
+                className="rounded-lg border border-border p-3"
               >
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="text-xs text-muted">
                   {CATEGORIA_LABEL[cat]}
                 </p>
-                <p className="text-lg font-semibold text-black dark:text-zinc-50">
+                <p className="text-lg font-semibold text-foreground">
                   ${money(porCategoriaSemana.get(cat) ?? 0)}
                 </p>
               </div>
@@ -214,39 +214,39 @@ export default async function VerReportePage({
         </div>
 
         {gastosSemana.length === 0 ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-muted">
             No hay movimientos cargados en este rango.
           </p>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-black/[.08] text-left text-zinc-500 dark:border-white/[.145] dark:text-zinc-400">
-                <th className="py-1.5 font-medium">Fecha</th>
-                <th className="py-1.5 font-medium">Paquete</th>
-                <th className="py-1.5 font-medium">Categoría</th>
-                <th className="py-1.5 font-medium">Descripción</th>
-                <th className="py-1.5 font-medium">Proveedor</th>
-                <th className="py-1.5 font-medium">Monto</th>
-                <th className="py-1.5 font-medium">Respaldo</th>
+              <tr className="border-b border-border text-left text-muted">
+                <th className="py-1.5 pr-4 font-medium">Fecha</th>
+                <th className="py-1.5 pr-4 font-medium">Paquete</th>
+                <th className="py-1.5 pr-4 font-medium">Categoría</th>
+                <th className="py-1.5 pr-4 font-medium">Descripción</th>
+                <th className="py-1.5 pr-4 font-medium">Proveedor</th>
+                <th className="py-1.5 pr-4 font-medium">Monto</th>
+                <th className="py-1.5 pr-4 font-medium">Respaldo</th>
               </tr>
             </thead>
             <tbody>
               {gastosSemana.map((g) => (
                 <tr
                   key={g.id}
-                  className="border-b border-black/[.05] dark:border-white/[.08]"
+                  className="border-b border-border/60"
                 >
-                  <td className="py-1.5">{g.fecha}</td>
-                  <td className="py-1.5">
+                  <td className="py-1.5 pr-4">{g.fecha}</td>
+                  <td className="py-1.5 pr-4">
                     {g.paquete ? `${g.paquete.codigo} · ${g.paquete.nombre}` : "—"}
                   </td>
-                  <td className="py-1.5">{CATEGORIA_LABEL[g.categoria]}</td>
-                  <td className="py-1.5">{g.descripcion ?? "—"}</td>
-                  <td className="py-1.5">{g.proveedor ?? "—"}</td>
-                  <td className="py-1.5">
+                  <td className="py-1.5 pr-4">{CATEGORIA_LABEL[g.categoria]}</td>
+                  <td className="py-1.5 pr-4">{g.descripcion ?? "—"}</td>
+                  <td className="py-1.5 pr-4">{g.proveedor ?? "—"}</td>
+                  <td className="py-1.5 pr-4">
                     ${money(g.monto)} {g.moneda}
                   </td>
-                  <td className="py-1.5">
+                  <td className="py-1.5 pr-4">
                     {g.link_factura && (
                       <a href={g.link_factura} className="mr-2 underline">
                         Factura
@@ -268,10 +268,10 @@ export default async function VerReportePage({
 
       {/* 2. Estado general */}
       <section className="mb-10">
-        <h2 className="mb-3 text-lg font-semibold text-black dark:text-zinc-50">
+        <h2 className="mb-3 text-lg font-semibold text-foreground">
           2. Estado general
         </h2>
-        <p className="mb-3 text-sm text-zinc-700 dark:text-zinc-300">
+        <p className="mb-3 text-sm text-foreground">
           Inversión acumulada a la fecha:{" "}
           <span className="font-semibold">${money(inversionAcumulada)}</span>
         </p>
@@ -280,12 +280,12 @@ export default async function VerReportePage({
             (cat) => (
               <div
                 key={cat}
-                className="rounded border border-black/[.08] p-3 dark:border-white/[.145]"
+                className="rounded-lg border border-border p-3"
               >
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="text-xs text-muted">
                   {CATEGORIA_LABEL[cat]} (acumulado)
                 </p>
-                <p className="text-lg font-semibold text-black dark:text-zinc-50">
+                <p className="text-lg font-semibold text-foreground">
                   ${money(porCategoriaAcumulado.get(cat) ?? 0)}
                 </p>
               </div>
@@ -296,11 +296,11 @@ export default async function VerReportePage({
 
       {/* 3. Puntos de atención */}
       <section className="mb-10">
-        <h2 className="mb-3 text-lg font-semibold text-black dark:text-zinc-50">
+        <h2 className="mb-3 text-lg font-semibold text-foreground">
           3. Puntos de atención
         </h2>
         {puntosDeAtencion.length === 0 ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-muted">
             No hay nada para revisar por ahora.
           </p>
         ) : (
@@ -308,7 +308,7 @@ export default async function VerReportePage({
             {puntosDeAtencion.map((h, i) => (
               <li
                 key={i}
-                className="rounded border border-black/[.08] px-3 py-2 text-sm text-zinc-700 dark:border-white/[.145] dark:text-zinc-300"
+                className="rounded-lg border border-border px-3 py-2 text-sm text-foreground"
               >
                 {h.mensaje}
               </li>
@@ -319,45 +319,45 @@ export default async function VerReportePage({
 
       {/* 4. Tabla maestra por paquete */}
       <section className="mb-10">
-        <h2 className="mb-3 text-lg font-semibold text-black dark:text-zinc-50">
+        <h2 className="mb-3 text-lg font-semibold text-foreground">
           4. Tabla maestra por paquete
         </h2>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-black/[.08] text-left text-zinc-500 dark:border-white/[.145] dark:text-zinc-400">
-              <th className="py-1.5 font-medium">Código</th>
-              <th className="py-1.5 font-medium">Nombre</th>
-              <th className="py-1.5 font-medium">Vigente</th>
-              <th className="py-1.5 font-medium">Ejecutado</th>
-              <th className="py-1.5 font-medium">Desvío</th>
-              <th className="py-1.5 font-medium">%</th>
+            <tr className="border-b border-border text-left text-muted">
+              <th className="py-1.5 pr-4 font-medium">Código</th>
+              <th className="py-1.5 pr-4 font-medium">Nombre</th>
+              <th className="py-1.5 pr-4 font-medium">Vigente</th>
+              <th className="py-1.5 pr-4 font-medium">Ejecutado</th>
+              <th className="py-1.5 pr-4 font-medium">Desvío</th>
+              <th className="py-1.5 pr-4 font-medium">%</th>
             </tr>
           </thead>
           <tbody>
             {tablaMaestra.map((f) => (
               <tr
                 key={f.id}
-                className="border-b border-black/[.05] dark:border-white/[.08]"
+                className="border-b border-border/60"
               >
-                <td className="py-1.5 font-mono text-xs">{f.codigo}</td>
+                <td className="py-1.5 pr-4 font-mono text-xs">{f.codigo}</td>
                 <td
-                  className="py-1.5"
+                  className="py-1.5 pr-4"
                   style={{ paddingLeft: `${f.nivel * 16}px` }}
                 >
                   {f.nombre}
                 </td>
-                <td className="py-1.5">${money(f.vigente)}</td>
-                <td className="py-1.5">${money(f.ejecutado)}</td>
+                <td className="py-1.5 pr-4">${money(f.vigente)}</td>
+                <td className="py-1.5 pr-4">${money(f.ejecutado)}</td>
                 <td
                   className={
                     f.desvio > 0
-                      ? "py-1.5 text-red-600 dark:text-red-400"
+                      ? "py-1.5 text-danger"
                       : "py-1.5"
                   }
                 >
                   ${money(f.desvio)}
                 </td>
-                <td className="py-1.5">
+                <td className="py-1.5 pr-4">
                   {f.pct != null ? `${f.pct.toFixed(1)}%` : "—"}
                 </td>
               </tr>
@@ -368,11 +368,11 @@ export default async function VerReportePage({
 
       {/* 5. Gráficos */}
       <section className="mb-10">
-        <h2 className="mb-3 text-lg font-semibold text-black dark:text-zinc-50">
+        <h2 className="mb-3 text-lg font-semibold text-foreground">
           5. Gráficos
         </h2>
 
-        <p className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <p className="mb-2 text-sm font-medium text-foreground">
           Vigente vs. ejecutado por paquete
         </p>
         <svg
@@ -423,7 +423,7 @@ export default async function VerReportePage({
           />
         </svg>
 
-        <p className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <p className="mb-2 text-sm font-medium text-foreground">
           Evolución acumulada semanal
         </p>
         {serieSemanal.length > 1 && (
@@ -483,7 +483,7 @@ export default async function VerReportePage({
 
       {/* 6. Detalle por paquete */}
       <section className="mb-10">
-        <h2 className="mb-3 text-lg font-semibold text-black dark:text-zinc-50">
+        <h2 className="mb-3 text-lg font-semibold text-foreground">
           6. Detalle por paquete
         </h2>
         {raices.map((f) => {
@@ -496,12 +496,12 @@ export default async function VerReportePage({
           }
           return (
             <div key={f.id} className="mb-5">
-              <h3 className="mb-1 text-sm font-semibold text-black dark:text-zinc-50">
+              <h3 className="mb-1 text-sm font-semibold text-foreground">
                 {f.codigo} · {f.nombre}
               </h3>
 
               {revisionesPaquete.length > 0 && (
-                <ul className="mb-2 space-y-0.5 text-xs text-zinc-600 dark:text-zinc-400">
+                <ul className="mb-2 space-y-0.5 text-xs text-muted">
                   {revisionesPaquete.map((r) => (
                     <li key={r.id}>
                       Adicional {r.fecha}: ${money(r.monto_nuevo)} ({r.estado})
@@ -519,15 +519,15 @@ export default async function VerReportePage({
                         key={g.id}
                         className={
                           esDeLaSemana
-                            ? "bg-yellow-50 dark:bg-yellow-950"
+                            ? "bg-warning-soft"
                             : ""
                         }
                       >
-                        <td className="py-1 pr-2">{g.fecha}</td>
-                        <td className="py-1 pr-2">
+                        <td className="py-1 pr-4">{g.fecha}</td>
+                        <td className="py-1 pr-4">
                           {CATEGORIA_LABEL[g.categoria]}
                         </td>
-                        <td className="py-1 pr-2">{g.descripcion ?? "—"}</td>
+                        <td className="py-1 pr-4">{g.descripcion ?? "—"}</td>
                         <td className="py-1">${money(g.monto)}</td>
                       </tr>
                     );
@@ -541,10 +541,10 @@ export default async function VerReportePage({
 
       {/* 7. Honorarios cobrados */}
       <section>
-        <h2 className="mb-3 text-lg font-semibold text-black dark:text-zinc-50">
+        <h2 className="mb-3 text-lg font-semibold text-foreground">
           7. Honorarios cobrados
         </h2>
-        <p className="mb-2 text-sm text-zinc-700 dark:text-zinc-300">
+        <p className="mb-2 text-sm text-foreground">
           Cobrado a la fecha:{" "}
           <span className="font-semibold">${money(honorariosAcumulados)}</span>
         </p>
@@ -554,10 +554,10 @@ export default async function VerReportePage({
               {honorariosSemana.map((g) => (
                 <tr
                   key={g.id}
-                  className="border-b border-black/[.05] dark:border-white/[.08]"
+                  className="border-b border-border/60"
                 >
-                  <td className="py-1.5">{g.fecha}</td>
-                  <td className="py-1.5">${money(g.monto)}</td>
+                  <td className="py-1.5 pr-4">{g.fecha}</td>
+                  <td className="py-1.5 pr-4">${money(g.monto)}</td>
                 </tr>
               ))}
             </tbody>

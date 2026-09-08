@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
-import { actualizarPaquete } from "../../actions";
+import { crearPaquete } from "../actions";
 
 const TIPOS = [
   { value: "trabajo", label: "Trabajo" },
@@ -11,30 +10,21 @@ const TIPOS = [
   { value: "mixto", label: "Mixto" },
 ];
 
-export default async function EditarPaquetePage({
+export default async function NuevoPaquetePage({
   params,
   searchParams,
 }: {
-  params: Promise<{ obraId: string; paqueteId: string }>;
+  params: Promise<{ obraId: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  const { obraId, paqueteId } = await params;
+  const { obraId } = await params;
   const { error: formError } = await searchParams;
   const supabase = await createClient();
-
-  const { data: paquete } = await supabase
-    .from("paquetes")
-    .select("id, codigo, nombre, tipo, parent_id, presupuesto_base, moneda")
-    .eq("id", paqueteId)
-    .single();
-
-  if (!paquete) notFound();
 
   const { data: paquetes } = await supabase
     .from("paquetes")
     .select("id, codigo, nombre")
     .eq("obra_id", obraId)
-    .neq("id", paqueteId)
     .order("codigo");
 
   return (
@@ -45,11 +35,10 @@ export default async function EditarPaquetePage({
         </Link>
       </p>
       <h1 className="mb-6 text-2xl font-semibold text-foreground">
-        Editar paquete
+        Nuevo paquete
       </h1>
 
-      <form action={actualizarPaquete} className="space-y-4">
-        <input type="hidden" name="id" value={paquete.id} />
+      <form action={crearPaquete} className="space-y-4">
         <input type="hidden" name="obra_id" value={obraId} />
 
         {formError && (
@@ -60,16 +49,16 @@ export default async function EditarPaquetePage({
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Código">
-            <Input type="text" name="codigo" required defaultValue={paquete.codigo} />
+            <Input type="text" name="codigo" required placeholder="01.04.02" />
           </Field>
           <Field label="Nombre">
-            <Input type="text" name="nombre" required defaultValue={paquete.nombre} />
+            <Input type="text" name="nombre" required />
           </Field>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Tipo">
-            <Select name="tipo" required defaultValue={paquete.tipo}>
+            <Select name="tipo" required defaultValue="trabajo">
               {TIPOS.map((t) => (
                 <option key={t.value} value={t.value}>
                   {t.label}
@@ -78,7 +67,7 @@ export default async function EditarPaquetePage({
             </Select>
           </Field>
           <Field label="Paquete padre">
-            <Select name="parent_id" defaultValue={paquete.parent_id ?? ""}>
+            <Select name="parent_id" defaultValue="">
               <option value="">— sin padre —</option>
               {paquetes?.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -91,22 +80,17 @@ export default async function EditarPaquetePage({
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Presupuesto base (opcional)">
-            <Input
-              type="number"
-              step="0.01"
-              name="presupuesto_base"
-              defaultValue={paquete.presupuesto_base ?? ""}
-            />
+            <Input type="number" step="0.01" name="presupuesto_base" />
           </Field>
           <Field label="Moneda">
-            <Select name="moneda" defaultValue={paquete.moneda ?? "ARS"}>
+            <Select name="moneda" defaultValue="ARS">
               <option value="ARS">ARS</option>
               <option value="USD">USD</option>
             </Select>
           </Field>
         </div>
 
-        <Button type="submit">Guardar cambios</Button>
+        <Button type="submit">Crear paquete</Button>
       </form>
     </div>
   );

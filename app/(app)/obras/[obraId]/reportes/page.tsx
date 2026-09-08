@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { Field, Input } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
 
 function ultimoLunes(fecha: Date): Date {
   const d = new Date(fecha);
@@ -38,12 +40,12 @@ export default async function ReportesPage({
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-8">
-      <p className="mb-1 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mb-1 text-sm text-muted">
         <Link href={`/obras/${obraId}`} className="hover:underline">
           {obra.nombre}
         </Link>
       </p>
-      <h1 className="mb-6 text-2xl font-semibold text-black dark:text-zinc-50">
+      <h1 className="mb-6 text-2xl font-semibold text-foreground">
         Reporte semanal
       </h1>
 
@@ -51,36 +53,13 @@ export default async function ReportesPage({
         action={`/obras/${obraId}/reportes/ver`}
         className="flex flex-wrap items-end gap-4"
       >
-        <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Desde
-          </label>
-          <input
-            type="date"
-            name="desde"
-            required
-            defaultValue={defaultDesde}
-            className="rounded border border-black/[.08] bg-transparent px-3 py-2 text-sm dark:border-white/[.145]"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Hasta
-          </label>
-          <input
-            type="date"
-            name="hasta"
-            required
-            defaultValue={defaultHasta}
-            className="rounded border border-black/[.08] bg-transparent px-3 py-2 text-sm dark:border-white/[.145]"
-          />
-        </div>
-        <button
-          type="submit"
-          className="rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-        >
-          Generar reporte
-        </button>
+        <Field label="Desde">
+          <Input type="date" name="desde" required defaultValue={defaultDesde} />
+        </Field>
+        <Field label="Hasta">
+          <Input type="date" name="hasta" required defaultValue={defaultHasta} />
+        </Field>
+        <Button type="submit">Generar reporte</Button>
       </form>
     </div>
   );
