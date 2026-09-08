@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { construirTablaMaestra, serieAcumuladaSemanal } from "@/lib/reporte";
-import { correrValidaciones } from "@/lib/validaciones";
 import { PrintButton } from "@/components/print-button";
 
 const CATEGORIA_LABEL: Record<string, string> = {
@@ -47,13 +46,13 @@ export default async function VerReportePage({
       supabase
         .from("revisiones_presupuesto")
         .select(
-          "id, paquete_id, fecha, monto_anterior, monto_nuevo, estado, paquetes!inner(obra_id)",
+          "id, paquete_id, fecha, monto_anterior, monto_nuevo, estado, documento, paquetes!inner(obra_id)",
         )
         .eq("paquetes.obra_id", obraId),
       supabase
         .from("gastos")
         .select(
-          "id, fecha, categoria, descripcion, proveedor, monto, moneda, paquete_id, revision_id, link_factura, link_comprobante_pago, paquetes(codigo, nombre)",
+          "id, fecha, categoria, descripcion, proveedor, monto, moneda, paquete_id, revision_id, link_factura, link_comprobante_pago, paquetes(codigo, nombre), proveedores(nombre)",
         )
         .eq("obra_id", obraId)
         .lte("fecha", hasta)
@@ -67,6 +66,7 @@ export default async function VerReportePage({
     monto_anterior: r.monto_anterior,
     monto_nuevo: r.monto_nuevo,
     estado: r.estado,
+    documento: r.documento as string | null,
   }));
 
   type GastoFila = {
@@ -84,10 +84,16 @@ export default async function VerReportePage({
     paquete: { codigo: string; nombre: string } | null;
   };
 
-  const gastos: GastoFila[] = (gastosRaw ?? []).map((g) => ({
-    ...g,
-    paquete: Array.isArray(g.paquetes) ? g.paquetes[0] : g.paquetes,
-  }));
+  const gastos: GastoFila[] = (gastosRaw ?? []).map((g) => {
+    const proveedorVinculado = Array.isArray(g.proveedores)
+      ? g.proveedores[0]
+      : g.proveedores;
+    return {
+      ...g,
+      paquete: Array.isArray(g.paquetes) ? g.paquetes[0] : g.paquetes,
+      proveedor: proveedorVinculado?.nombre ?? g.proveedor,
+    };
+  });
 
   const gastosSemana = gastos.filter((g) => g.fecha >= desde && g.fecha <= hasta);
 
@@ -125,13 +131,6 @@ export default async function VerReportePage({
     );
   }
 
-  const puntosDeAtencion = correrValidaciones(
-    gastos,
-    paquetes ?? [],
-    revisiones,
-    obra.pct_honorarios,
-  );
-
   const serieSemanal = serieAcumuladaSemanal(gastos, hasta);
 
   const honorariosSemana = gastosSemana.filter(
@@ -141,20 +140,29 @@ export default async function VerReportePage({
     .filter((g) => g.categoria === "honorarios")
     .reduce((acc, g) => acc + g.monto, 0);
 
-  // --- Gráfico de barras por paquete (vigente vs ejecutado) ---
+  // --- Gráfico: vigente vs. ejecutado por ítem (barras horizontales) ---
   const anchoGrafico = 720;
-  const altoGrafico = 260;
-  const margenInf = 40;
-  const margenSup = 20;
-  const altoBarras = altoGrafico - margenInf - margenSup;
   const maxBarra = Math.max(
     1,
     ...raices.map((f) => Math.max(f.vigente, f.ejecutado)),
   );
-  const anchoSlot = anchoGrafico / Math.max(1, raices.length);
+  const alturaFila = 32;
+  const margenIzqBarras = 150;
+  const margenInfBarras = 30;
+  const anchoAreaBarras = anchoGrafico - margenIzqBarras - 16;
+  const altoAreaBarras = raices.length * alturaFila;
+  const altoGraficoBarras = altoAreaBarras + margenInfBarras;
+
+  // --- Gráfico: evolución acumulada semanal ---
+  const altoEvol = 260;
+  const margenSupEvol = 20;
+  const margenInfEvol = 30;
+  const margenIzqEvol = 70;
+  const altoAreaEvol = altoEvol - margenSupEvol - margenInfEvol;
+  const anchoAreaEvol = anchoGrafico - margenIzqEvol;
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-6 py-8 print:max-w-none print:px-0 print:py-0">
+    <div className="mx-auto w-full max-w-6xl px-8 py-8 print:max-w-none print:px-0 print:py-0">
       <style>{`
         @media print {
           .no-print { display: none !important; }
@@ -198,13 +206,8 @@ export default async function VerReportePage({
           </div>
           {(["mano_de_obra", "materiales", "honorarios"] as const).map(
             (cat) => (
-              <div
-                key={cat}
-                className="rounded-lg border border-border p-3"
-              >
-                <p className="text-xs text-muted">
-                  {CATEGORIA_LABEL[cat]}
-                </p>
+              <div key={cat} className="rounded-lg border border-border p-3">
+                <p className="text-xs text-muted">{CATEGORIA_LABEL[cat]}</p>
                 <p className="text-lg font-semibold text-foreground">
                   ${money(porCategoriaSemana.get(cat) ?? 0)}
                 </p>
@@ -221,32 +224,29 @@ export default async function VerReportePage({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-muted">
-                <th className="py-1.5 pr-4 font-medium">Fecha</th>
-                <th className="py-1.5 pr-4 font-medium">Paquete</th>
-                <th className="py-1.5 pr-4 font-medium">Categoría</th>
-                <th className="py-1.5 pr-4 font-medium">Descripción</th>
-                <th className="py-1.5 pr-4 font-medium">Proveedor</th>
-                <th className="py-1.5 pr-4 font-medium">Monto</th>
-                <th className="py-1.5 pr-4 font-medium">Respaldo</th>
+                <th className="py-1.5 pr-6 font-medium">Fecha</th>
+                <th className="py-1.5 pr-6 font-medium">Ítem</th>
+                <th className="py-1.5 pr-6 font-medium">Categoría</th>
+                <th className="py-1.5 pr-6 font-medium">Descripción</th>
+                <th className="py-1.5 pr-6 font-medium">Proveedor</th>
+                <th className="py-1.5 pr-6 font-medium">Monto</th>
+                <th className="py-1.5 pr-6 font-medium">Respaldo</th>
               </tr>
             </thead>
             <tbody>
               {gastosSemana.map((g) => (
-                <tr
-                  key={g.id}
-                  className="border-b border-border/60"
-                >
-                  <td className="py-1.5 pr-4">{g.fecha}</td>
-                  <td className="py-1.5 pr-4">
+                <tr key={g.id} className="border-b border-border/60">
+                  <td className="py-1.5 pr-6">{g.fecha}</td>
+                  <td className="py-1.5 pr-6">
                     {g.paquete ? `${g.paquete.codigo} · ${g.paquete.nombre}` : "—"}
                   </td>
-                  <td className="py-1.5 pr-4">{CATEGORIA_LABEL[g.categoria]}</td>
-                  <td className="py-1.5 pr-4">{g.descripcion ?? "—"}</td>
-                  <td className="py-1.5 pr-4">{g.proveedor ?? "—"}</td>
-                  <td className="py-1.5 pr-4">
+                  <td className="py-1.5 pr-6">{CATEGORIA_LABEL[g.categoria]}</td>
+                  <td className="py-1.5 pr-6">{g.descripcion ?? "—"}</td>
+                  <td className="py-1.5 pr-6">{g.proveedor ?? "—"}</td>
+                  <td className="py-1.5 pr-6">
                     ${money(g.monto)} {g.moneda}
                   </td>
-                  <td className="py-1.5 pr-4">
+                  <td className="py-1.5 pr-6">
                     {g.link_factura && (
                       <a href={g.link_factura} className="mr-2 underline">
                         Factura
@@ -278,10 +278,7 @@ export default async function VerReportePage({
         <div className="grid grid-cols-3 gap-3">
           {(["mano_de_obra", "materiales", "honorarios"] as const).map(
             (cat) => (
-              <div
-                key={cat}
-                className="rounded-lg border border-border p-3"
-              >
+              <div key={cat} className="rounded-lg border border-border p-3">
                 <p className="text-xs text-muted">
                   {CATEGORIA_LABEL[cat]} (acumulado)
                 </p>
@@ -294,71 +291,53 @@ export default async function VerReportePage({
         </div>
       </section>
 
-      {/* 3. Puntos de atención */}
+      {/* 3. Tabla maestra por ítem */}
       <section className="mb-10">
         <h2 className="mb-3 text-lg font-semibold text-foreground">
-          3. Puntos de atención
-        </h2>
-        {puntosDeAtencion.length === 0 ? (
-          <p className="text-sm text-muted">
-            No hay nada para revisar por ahora.
-          </p>
-        ) : (
-          <ul className="space-y-1">
-            {puntosDeAtencion.map((h, i) => (
-              <li
-                key={i}
-                className="rounded-lg border border-border px-3 py-2 text-sm text-foreground"
-              >
-                {h.mensaje}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* 4. Tabla maestra por paquete */}
-      <section className="mb-10">
-        <h2 className="mb-3 text-lg font-semibold text-foreground">
-          4. Tabla maestra por paquete
+          3. Tabla maestra por ítem
         </h2>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-muted">
-              <th className="py-1.5 pr-4 font-medium">Código</th>
-              <th className="py-1.5 pr-4 font-medium">Nombre</th>
-              <th className="py-1.5 pr-4 font-medium">Vigente</th>
-              <th className="py-1.5 pr-4 font-medium">Ejecutado</th>
-              <th className="py-1.5 pr-4 font-medium">Desvío</th>
-              <th className="py-1.5 pr-4 font-medium">%</th>
+              <th className="py-1.5 pr-6 font-medium">Código</th>
+              <th className="py-1.5 pr-6 font-medium">Ítem</th>
+              <th className="py-1.5 pr-6 font-medium">Vigente</th>
+              <th className="py-1.5 pr-6 font-medium">Ejecutado</th>
+              <th className="py-1.5 pr-6 font-medium">Desvío</th>
+              <th className="py-1.5 pr-6 font-medium">Avance</th>
             </tr>
           </thead>
           <tbody>
             {tablaMaestra.map((f) => (
-              <tr
-                key={f.id}
-                className="border-b border-border/60"
-              >
-                <td className="py-1.5 pr-4 font-mono text-xs">{f.codigo}</td>
+              <tr key={f.id} className="border-b border-border/60">
+                <td className="py-1.5 pr-6 font-mono text-xs">{f.codigo}</td>
                 <td
-                  className="py-1.5 pr-4"
+                  className="py-1.5 pr-6"
                   style={{ paddingLeft: `${f.nivel * 16}px` }}
                 >
                   {f.nombre}
                 </td>
-                <td className="py-1.5 pr-4">${money(f.vigente)}</td>
-                <td className="py-1.5 pr-4">${money(f.ejecutado)}</td>
-                <td
-                  className={
-                    f.desvio > 0
-                      ? "py-1.5 text-danger"
-                      : "py-1.5"
-                  }
-                >
+                <td className="py-1.5 pr-6">${money(f.vigente)}</td>
+                <td className="py-1.5 pr-6">${money(f.ejecutado)}</td>
+                <td className={f.desvio > 0 ? "py-1.5 pr-6 text-danger" : "py-1.5 pr-6"}>
                   ${money(f.desvio)}
                 </td>
-                <td className="py-1.5 pr-4">
-                  {f.pct != null ? `${f.pct.toFixed(1)}%` : "—"}
+                <td className="py-1.5 pr-6">
+                  {f.pct != null ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-20 overflow-hidden rounded-full bg-border">
+                        <div
+                          className={f.pct > 100 ? "h-full bg-danger" : "h-full bg-accent"}
+                          style={{ width: `${Math.min(100, f.pct)}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-muted">
+                        {f.pct.toFixed(0)}%
+                      </span>
+                    </div>
+                  ) : (
+                    "—"
+                  )}
                 </td>
               </tr>
             ))}
@@ -366,114 +345,167 @@ export default async function VerReportePage({
         </table>
       </section>
 
-      {/* 5. Gráficos */}
+      {/* 4. Gráficos */}
       <section className="mb-10">
         <h2 className="mb-3 text-lg font-semibold text-foreground">
-          5. Gráficos
+          4. Gráficos
         </h2>
 
         <p className="mb-2 text-sm font-medium text-foreground">
-          Vigente vs. ejecutado por paquete
+          Vigente vs. ejecutado por ítem
         </p>
-        <svg
-          viewBox={`0 0 ${anchoGrafico} ${altoGrafico}`}
-          className="mb-6 w-full"
-        >
-          {raices.map((f, i) => {
-            const x = i * anchoSlot;
-            const wBarra = anchoSlot / 3;
-            const hVigente = (f.vigente / maxBarra) * altoBarras;
-            const hEjecutado = (f.ejecutado / maxBarra) * altoBarras;
-            const colorEjecutado = f.ejecutado > f.vigente ? "#dc2626" : "#2563eb";
-            return (
-              <g key={f.id}>
-                <rect
-                  x={x + anchoSlot / 2 - wBarra - 2}
-                  y={margenSup + altoBarras - hVigente}
-                  width={wBarra}
-                  height={hVigente}
-                  fill="#a1a1aa"
-                />
-                <rect
-                  x={x + anchoSlot / 2 + 2}
-                  y={margenSup + altoBarras - hEjecutado}
-                  width={wBarra}
-                  height={hEjecutado}
-                  fill={colorEjecutado}
-                />
-                <text
-                  x={x + anchoSlot / 2}
-                  y={altoGrafico - margenInf + 16}
-                  textAnchor="middle"
-                  fontSize="11"
-                  fill="currentColor"
-                >
-                  {f.codigo}
-                </text>
-              </g>
-            );
-          })}
-          <line
-            x1="0"
-            y1={margenSup + altoBarras}
-            x2={anchoGrafico}
-            y2={margenSup + altoBarras}
-            stroke="currentColor"
-            strokeOpacity="0.2"
-          />
-        </svg>
+        {raices.length > 0 && (
+          <svg
+            viewBox={`0 0 ${anchoGrafico} ${altoGraficoBarras}`}
+            className="mb-8 w-full"
+          >
+            {[0, 0.25, 0.5, 0.75, 1].map((frac) => {
+              const x = margenIzqBarras + frac * anchoAreaBarras;
+              return (
+                <g key={frac}>
+                  <line
+                    x1={x}
+                    y1={0}
+                    x2={x}
+                    y2={altoAreaBarras}
+                    stroke="var(--border)"
+                    strokeWidth="1"
+                  />
+                  <text
+                    x={x}
+                    y={altoAreaBarras + 16}
+                    textAnchor={frac === 0 ? "start" : frac === 1 ? "end" : "middle"}
+                    fontSize="10"
+                    fill="var(--muted)"
+                  >
+                    ${money(Math.round(frac * maxBarra))}
+                  </text>
+                </g>
+              );
+            })}
+            {raices.map((f, i) => {
+              const y = i * alturaFila;
+              const grosor = 14;
+              const barY = y + (alturaFila - grosor) / 2;
+              const wVigente = (f.vigente / maxBarra) * anchoAreaBarras;
+              const wEjecutado = (f.ejecutado / maxBarra) * anchoAreaBarras;
+              const sobre = f.ejecutado > f.vigente;
+              return (
+                <g key={f.id}>
+                  <text
+                    x={margenIzqBarras - 10}
+                    y={y + alturaFila / 2}
+                    textAnchor="end"
+                    dominantBaseline="middle"
+                    fontSize="12"
+                    fill="var(--foreground)"
+                  >
+                    {f.nombre}
+                  </text>
+                  <rect
+                    x={margenIzqBarras}
+                    y={barY}
+                    width={wVigente}
+                    height={grosor}
+                    rx="3"
+                    fill="var(--border)"
+                  />
+                  <rect
+                    x={margenIzqBarras}
+                    y={barY}
+                    width={wEjecutado}
+                    height={grosor}
+                    rx="3"
+                    fill={sobre ? "var(--danger)" : "var(--accent)"}
+                  />
+                </g>
+              );
+            })}
+          </svg>
+        )}
 
         <p className="mb-2 text-sm font-medium text-foreground">
           Evolución acumulada semanal
         </p>
         {serieSemanal.length > 1 && (
-          <svg
-            viewBox={`0 0 ${anchoGrafico} ${altoGrafico}`}
-            className="w-full"
-          >
+          <svg viewBox={`0 0 ${anchoGrafico} ${altoEvol}`} className="w-full">
             {(() => {
-              const maxAcum = Math.max(
-                1,
-                ...serieSemanal.map((p) => p.acumulado),
-              );
-              const pasoX = anchoGrafico / (serieSemanal.length - 1);
+              const maxAcum = Math.max(1, ...serieSemanal.map((p) => p.acumulado));
+              const pasoX = anchoAreaEvol / (serieSemanal.length - 1);
               const puntos = serieSemanal
                 .map((p, i) => {
-                  const x = i * pasoX;
+                  const x = margenIzqEvol + i * pasoX;
                   const y =
-                    margenSup + altoBarras -
-                    (p.acumulado / maxAcum) * altoBarras;
+                    margenSupEvol + altoAreaEvol -
+                    (p.acumulado / maxAcum) * altoAreaEvol;
                   return `${x},${y}`;
                 })
                 .join(" ");
+
+              const maxEtiquetas = 7;
+              const pasoEtiqueta = Math.max(
+                1,
+                Math.ceil(serieSemanal.length / maxEtiquetas),
+              );
+
               return (
                 <>
+                  {[0, 0.25, 0.5, 0.75, 1].map((frac) => {
+                    const y = margenSupEvol + altoAreaEvol - frac * altoAreaEvol;
+                    return (
+                      <g key={frac}>
+                        <line
+                          x1={margenIzqEvol}
+                          y1={y}
+                          x2={anchoGrafico}
+                          y2={y}
+                          stroke="var(--border)"
+                          strokeWidth="1"
+                        />
+                        <text
+                          x={margenIzqEvol - 8}
+                          y={y}
+                          textAnchor="end"
+                          dominantBaseline="middle"
+                          fontSize="10"
+                          fill="var(--muted)"
+                        >
+                          ${money(Math.round(frac * maxAcum))}
+                        </text>
+                      </g>
+                    );
+                  })}
+                  <line
+                    x1={margenIzqEvol}
+                    y1={margenSupEvol}
+                    x2={margenIzqEvol}
+                    y2={margenSupEvol + altoAreaEvol}
+                    stroke="var(--border)"
+                    strokeWidth="1"
+                  />
                   <polyline
                     points={puntos}
                     fill="none"
-                    stroke="#2563eb"
+                    stroke="var(--accent)"
                     strokeWidth="2"
                   />
-                  <line
-                    x1="0"
-                    y1={margenSup + altoBarras}
-                    x2={anchoGrafico}
-                    y2={margenSup + altoBarras}
-                    stroke="currentColor"
-                    strokeOpacity="0.2"
-                  />
-                  <text x="0" y={altoGrafico - margenInf + 16} fontSize="11" fill="currentColor">
-                    {serieSemanal[0].semana}
-                  </text>
-                  <text
-                    x={anchoGrafico}
-                    y={altoGrafico - margenInf + 16}
-                    textAnchor="end"
-                    fontSize="11"
-                    fill="currentColor"
-                  >
-                    {serieSemanal[serieSemanal.length - 1].semana}
-                  </text>
+                  {serieSemanal.map((p, i) => {
+                    const esUltima = i === serieSemanal.length - 1;
+                    if (i % pasoEtiqueta !== 0 && !esUltima) return null;
+                    const x = margenIzqEvol + i * pasoX;
+                    return (
+                      <text
+                        key={p.semana}
+                        x={x}
+                        y={altoEvol - margenInfEvol + 16}
+                        textAnchor={esUltima ? "end" : "middle"}
+                        fontSize="10"
+                        fill="var(--muted)"
+                      >
+                        {p.semana.slice(5)}
+                      </text>
+                    );
+                  })}
                 </>
               );
             })()}
@@ -481,68 +513,81 @@ export default async function VerReportePage({
         )}
       </section>
 
-      {/* 6. Detalle por paquete */}
+      {/* 5. Detalle por ítem */}
       <section className="mb-10">
         <h2 className="mb-3 text-lg font-semibold text-foreground">
-          6. Detalle por paquete
+          5. Detalle por ítem
         </h2>
         {raices.map((f) => {
-          const revisionesPaquete = revisiones.filter(
-            (r) => r.paquete_id === f.id,
-          );
-          const gastosPaquete = gastos.filter((g) => g.paquete_id === f.id);
-          if (revisionesPaquete.length === 0 && gastosPaquete.length === 0) {
+          const revisionesItem = revisiones.filter((r) => r.paquete_id === f.id);
+          const gastosItem = gastos.filter((g) => g.paquete_id === f.id);
+          if (revisionesItem.length === 0 && gastosItem.length === 0) {
             return null;
           }
+          const totalItem = gastosItem.reduce((acc, g) => acc + g.monto, 0);
           return (
-            <div key={f.id} className="mb-5">
+            <div key={f.id} className="mb-6">
               <h3 className="mb-1 text-sm font-semibold text-foreground">
                 {f.codigo} · {f.nombre}
               </h3>
 
-              {revisionesPaquete.length > 0 && (
+              {revisionesItem.length > 0 && (
                 <ul className="mb-2 space-y-0.5 text-xs text-muted">
-                  {revisionesPaquete.map((r) => (
-                    <li key={r.id}>
-                      Adicional {r.fecha}: ${money(r.monto_nuevo)} ({r.estado})
-                    </li>
-                  ))}
+                  {revisionesItem.map((r) =>
+                    r.documento ? (
+                      <li key={r.id}>
+                        <a href={r.documento} className="underline">
+                          Adicional {r.fecha}: ${money(r.monto_nuevo)} (
+                          {r.estado})
+                        </a>
+                      </li>
+                    ) : (
+                      <li key={r.id}>
+                        Adicional {r.fecha}: ${money(r.monto_nuevo)} (
+                        {r.estado})
+                      </li>
+                    ),
+                  )}
                 </ul>
               )}
 
               <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-left text-muted">
+                    <th className="py-1 pr-6 font-medium">Fecha</th>
+                    <th className="py-1 pr-6 font-medium">Categoría</th>
+                    <th className="py-1 pr-6 font-medium">Descripción</th>
+                    <th className="py-1 pr-6 font-medium">Proveedor</th>
+                    <th className="py-1 pr-6 font-medium">Monto</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {gastosPaquete.map((g) => {
+                  {gastosItem.map((g) => {
                     const esDeLaSemana = g.fecha >= desde && g.fecha <= hasta;
                     return (
-                      <tr
-                        key={g.id}
-                        className={
-                          esDeLaSemana
-                            ? "bg-warning-soft"
-                            : ""
-                        }
-                      >
-                        <td className="py-1 pr-4">{g.fecha}</td>
-                        <td className="py-1 pr-4">
-                          {CATEGORIA_LABEL[g.categoria]}
-                        </td>
-                        <td className="py-1 pr-4">{g.descripcion ?? "—"}</td>
-                        <td className="py-1">${money(g.monto)}</td>
+                      <tr key={g.id} className={esDeLaSemana ? "bg-warning-soft" : ""}>
+                        <td className="py-1 pr-6">{g.fecha}</td>
+                        <td className="py-1 pr-6">{CATEGORIA_LABEL[g.categoria]}</td>
+                        <td className="py-1 pr-6">{g.descripcion ?? "—"}</td>
+                        <td className="py-1 pr-6">{g.proveedor ?? "—"}</td>
+                        <td className="py-1 pr-6">${money(g.monto)}</td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
+              <p className="mt-1 text-xs font-medium text-foreground">
+                Total gastado: ${money(totalItem)}
+              </p>
             </div>
           );
         })}
       </section>
 
-      {/* 7. Honorarios cobrados */}
+      {/* 6. Honorarios cobrados */}
       <section>
         <h2 className="mb-3 text-lg font-semibold text-foreground">
-          7. Honorarios cobrados
+          6. Honorarios cobrados
         </h2>
         <p className="mb-2 text-sm text-foreground">
           Cobrado a la fecha:{" "}
@@ -552,12 +597,9 @@ export default async function VerReportePage({
           <table className="w-full text-sm">
             <tbody>
               {honorariosSemana.map((g) => (
-                <tr
-                  key={g.id}
-                  className="border-b border-border/60"
-                >
-                  <td className="py-1.5 pr-4">{g.fecha}</td>
-                  <td className="py-1.5 pr-4">${money(g.monto)}</td>
+                <tr key={g.id} className="border-b border-border/60">
+                  <td className="py-1.5 pr-6">{g.fecha}</td>
+                  <td className="py-1.5 pr-6">${money(g.monto)}</td>
                 </tr>
               ))}
             </tbody>
