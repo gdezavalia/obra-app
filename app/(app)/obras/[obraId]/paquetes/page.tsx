@@ -35,7 +35,7 @@ export default async function PaquetesPage({
     .order("codigo");
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-6 py-8">
+    <div className="mx-auto w-full max-w-5xl px-8 py-8">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <p className="mb-1 text-sm text-muted">
@@ -85,11 +85,11 @@ export default async function PaquetesPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-muted">
-              <th className="py-2 pr-4 pl-2 font-medium">Código</th>
-              <th className="py-2 pr-4 font-medium">Nombre</th>
-              <th className="py-2 pr-4 font-medium">Tipo</th>
-              <th className="py-2 pr-4 font-medium">Presupuesto</th>
-              <th className="py-2 font-medium" />
+              <th className="py-3 pr-8 pl-3 font-medium">Código</th>
+              <th className="py-3 pr-8 font-medium">Nombre</th>
+              <th className="py-3 pr-8 font-medium">Tipo</th>
+              <th className="py-3 pr-8 font-medium">Presupuesto</th>
+              <th className="py-3 font-medium" />
             </tr>
           </thead>
           <tbody>
@@ -100,24 +100,24 @@ export default async function PaquetesPage({
                   key={p.id}
                   className="border-b border-border/60 odd:bg-black/[.015] dark:odd:bg-white/[.02]"
                 >
-                  <td className="py-2 pr-4 pl-2 font-mono text-xs text-muted">
+                  <td className="py-3 pr-8 pl-3 font-mono text-xs text-muted">
                     {p.codigo}
                   </td>
                   <td
-                    className="py-2 pr-4"
+                    className="py-3 pr-8"
                     style={{ paddingLeft: `${nivel * 16}px` }}
                   >
                     {p.nombre}
                   </td>
-                  <td className="py-2 pr-4 text-muted">
+                  <td className="py-3 pr-8 text-muted">
                     {TIPOS.find((t) => t.value === p.tipo)?.label ?? p.tipo}
                   </td>
-                  <td className="py-2 pr-4 text-muted">
+                  <td className="py-3 pr-8 text-muted">
                     {p.presupuesto_base != null
                       ? `${p.presupuesto_base.toLocaleString("es-AR")} ${p.moneda ?? ""}`
                       : "—"}
                   </td>
-                  <td className="py-2 pr-2 text-right">
+                  <td className="py-3 pr-3 text-right">
                     <Link
                       href={`/obras/${obraId}/paquetes/${p.id}/revisiones`}
                       className="mr-3 text-accent hover:underline"

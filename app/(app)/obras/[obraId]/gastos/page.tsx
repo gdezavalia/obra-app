@@ -37,7 +37,7 @@ export default async function GastosPage({
     .order("fecha", { ascending: false });
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-6 py-8">
+    <div className="mx-auto w-full max-w-6xl px-8 py-8">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <p className="mb-1 text-sm text-muted">
@@ -79,12 +79,12 @@ export default async function GastosPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-muted">
-              <th className="py-2 pr-4 pl-2 font-medium">Fecha</th>
-              <th className="py-2 pr-4 font-medium">Paquete</th>
-              <th className="py-2 pr-4 font-medium">Categoría</th>
-              <th className="py-2 pr-4 font-medium">Proveedor</th>
-              <th className="py-2 pr-4 font-medium">Monto</th>
-              <th className="py-2 font-medium" />
+              <th className="py-3 pr-8 pl-3 font-medium">Fecha</th>
+              <th className="py-3 pr-8 font-medium">Paquete</th>
+              <th className="py-3 pr-8 font-medium">Categoría</th>
+              <th className="py-3 pr-8 font-medium">Proveedor</th>
+              <th className="py-3 pr-8 font-medium">Monto</th>
+              <th className="py-3 font-medium" />
             </tr>
           </thead>
           <tbody>
@@ -101,20 +101,20 @@ export default async function GastosPage({
                   key={g.id}
                   className="border-b border-border/60 odd:bg-black/[.015] dark:odd:bg-white/[.02]"
                 >
-                  <td className="py-2 pr-4 pl-2 whitespace-nowrap">
+                  <td className="py-3 pr-8 pl-3 whitespace-nowrap">
                     {g.fecha}
                   </td>
-                  <td className="py-2 pr-4">
+                  <td className="py-3 pr-8">
                     {paquete ? `${paquete.codigo} · ${paquete.nombre}` : "—"}
                   </td>
-                  <td className="py-2 pr-4 text-muted">
+                  <td className="py-3 pr-8 text-muted">
                     {CATEGORIAS[g.categoria] ?? g.categoria}
                   </td>
-                  <td className="py-2 pr-4 text-muted">{proveedor ?? "—"}</td>
-                  <td className="py-2 pr-4 whitespace-nowrap">
+                  <td className="py-3 pr-8 text-muted">{proveedor ?? "—"}</td>
+                  <td className="py-3 pr-8 whitespace-nowrap">
                     {g.monto.toLocaleString("es-AR")} {g.moneda}
                   </td>
-                  <td className="py-2 pr-2 text-right whitespace-nowrap">
+                  <td className="py-3 pr-3 text-right whitespace-nowrap">
                     <Link
                       href={`/obras/${obraId}/gastos/${g.id}/editar`}
                       className="mr-3 text-muted hover:text-foreground hover:underline"

@@ -46,7 +46,7 @@ export default async function RevisionesPage({
       ) ?? 0);
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-6 py-8">
+    <div className="mx-auto w-full max-w-5xl px-8 py-8">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <p className="mb-1 text-sm text-muted">
@@ -109,26 +109,26 @@ export default async function RevisionesPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-muted">
-              <th className="py-2 pr-4 pl-2 font-medium">Fecha</th>
-              <th className="py-2 pr-4 font-medium">
+              <th className="py-3 pr-8 pl-3 font-medium">Fecha</th>
+              <th className="py-3 pr-8 font-medium">
                 Monto anterior → nuevo
               </th>
-              <th className="py-2 pr-4 font-medium">Estado</th>
-              <th className="py-2 pr-4 font-medium">Notas</th>
-              <th className="py-2 font-medium" />
+              <th className="py-3 pr-8 font-medium">Estado</th>
+              <th className="py-3 pr-8 font-medium">Notas</th>
+              <th className="py-3 font-medium" />
             </tr>
           </thead>
           <tbody>
             {revisiones.map((r) => (
               <tr key={r.id} className="border-b border-border/60">
-                <td className="py-2 pr-4 pl-2 whitespace-nowrap">
+                <td className="py-3 pr-8 pl-3 whitespace-nowrap">
                   {r.fecha}
                 </td>
-                <td className="py-2 pr-4 text-muted whitespace-nowrap">
+                <td className="py-3 pr-8 text-muted whitespace-nowrap">
                   {r.monto_anterior?.toLocaleString("es-AR") ?? "—"} →{" "}
                   {r.monto_nuevo?.toLocaleString("es-AR") ?? "—"}
                 </td>
-                <td className="py-2 pr-4">
+                <td className="py-3 pr-8">
                   <div className="flex items-center gap-2">
                     <BadgeEstado estado={r.estado} />
                     {r.estado === "pendiente" && diasDesde(r.fecha) > 7 && (
@@ -138,8 +138,8 @@ export default async function RevisionesPage({
                     )}
                   </div>
                 </td>
-                <td className="py-2 pr-4 text-muted">{r.notas ?? "—"}</td>
-                <td className="py-2 pr-2 text-right whitespace-nowrap">
+                <td className="py-3 pr-8 text-muted">{r.notas ?? "—"}</td>
+                <td className="py-3 pr-3 text-right whitespace-nowrap">
                   {r.estado === "pendiente" && (
                     <>
                       <Link
