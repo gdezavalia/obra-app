@@ -123,9 +123,14 @@ export async function importarPaquetes(formData: FormData) {
       presupuesto_base = n;
     }
 
+    // El nivel 1 (ej. "01") suele ser solo el prefijo de numeración de toda
+    // la obra, no un paquete real (ver dominio.md, anexo): nunca aparece
+    // como fila propia. Por eso solo exigimos que exista el padre directo
+    // a partir del nivel 3 (ej. "01.04.02" necesita "01.04"); un código de
+    // nivel 2 (ej. "01.04") cuelga de "01" si existe, y si no, es raíz.
     const segmentos = codigo.split(".");
     let parent_id: string | null = null;
-    if (segmentos.length > 1) {
+    if (segmentos.length > 2) {
       const codigoPadre = segmentos.slice(0, -1).join(".");
       const padreId = codigoToId.get(codigoPadre);
       if (!padreId) {
@@ -138,6 +143,9 @@ export async function importarPaquetes(formData: FormData) {
         continue;
       }
       parent_id = padreId;
+    } else if (segmentos.length === 2) {
+      const codigoPadre = segmentos.slice(0, -1).join(".");
+      parent_id = codigoToId.get(codigoPadre) ?? null;
     }
 
     const { data: inserted, error } = await supabase
