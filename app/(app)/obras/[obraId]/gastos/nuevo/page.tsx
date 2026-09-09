@@ -24,10 +24,31 @@ export default async function NuevoGastoPage({
   searchParams,
 }: {
   params: Promise<{ obraId: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    fecha?: string;
+    proveedor_texto?: string;
+    descripcion?: string;
+    monto?: string;
+    forma_pago?: string;
+    link_factura?: string;
+    ocr_error?: string;
+  }>;
 }) {
   const { obraId } = await params;
-  const { error: formError } = await searchParams;
+  const {
+    error: formError,
+    fecha: fechaOcr,
+    proveedor_texto: proveedorOcr,
+    descripcion: descripcionOcr,
+    monto: montoOcr,
+    forma_pago: formaPagoOcr,
+    link_factura: linkFacturaOcr,
+    ocr_error: ocrError,
+  } = await searchParams;
+  const huboOcr = Boolean(
+    fechaOcr || proveedorOcr || descripcionOcr || montoOcr || formaPagoOcr || linkFacturaOcr,
+  );
   const supabase = await createClient();
 
   const { data: obra } = await supabase
@@ -72,8 +93,23 @@ export default async function NuevoGastoPage({
           </p>
         )}
 
+        {huboOcr && (
+          <p className="rounded-lg bg-accent/10 px-3 py-2 text-sm text-accent">
+            Completamos algunos campos leyendo la foto. Revisalos antes de
+            guardar — el sistema nunca guarda sin que lo confirmes.
+          </p>
+        )}
+
+        {ocrError === "1" && (
+          <p className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning">
+            No pudimos leer los datos de la foto automáticamente. La foto ya
+            se subió y quedó en &quot;Link factura&quot; — completá el resto a
+            mano.
+          </p>
+        )}
+
         <Field label="Fecha">
-          <Input type="date" name="fecha" required />
+          <Input type="date" name="fecha" required defaultValue={fechaOcr} />
         </Field>
 
         <CamposPaqueteYRevision
@@ -91,16 +127,23 @@ export default async function NuevoGastoPage({
               ))}
             </Select>
           </Field>
-          <CampoProveedor proveedores={proveedores ?? []} />
+          <CampoProveedor
+            proveedores={proveedores ?? []}
+            defaultNombreNuevo={proveedorOcr ?? ""}
+          />
         </div>
 
         <Field label="Descripción">
-          <Textarea name="descripcion" />
+          <Textarea name="descripcion" defaultValue={descripcionOcr} />
         </Field>
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Monto">
-            <MoneyInput name="monto" required />
+            <MoneyInput
+              name="monto"
+              required
+              defaultValue={montoOcr ? Number(montoOcr) : null}
+            />
           </Field>
           <Field label="Moneda">
             <Select name="moneda" defaultValue={obra.moneda_base}>
@@ -116,6 +159,7 @@ export default async function NuevoGastoPage({
               type="text"
               name="forma_pago"
               placeholder="Efectivo, transferencia..."
+              defaultValue={formaPagoOcr}
             />
           </Field>
           <Field label="Pagado por">
@@ -132,7 +176,7 @@ export default async function NuevoGastoPage({
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Link factura">
-            <Input type="url" name="link_factura" />
+            <Input type="url" name="link_factura" defaultValue={linkFacturaOcr} />
           </Field>
           <Field label="Link comprobante de pago">
             <Input type="url" name="link_comprobante_pago" />

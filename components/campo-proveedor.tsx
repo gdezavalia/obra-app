@@ -9,11 +9,13 @@ type Proveedor = { id: string; nombre: string };
 export function CampoProveedor({
   proveedores,
   defaultProveedorId = "",
+  defaultNombreNuevo = "",
 }: {
   proveedores: Proveedor[];
   defaultProveedorId?: string;
+  defaultNombreNuevo?: string;
 }) {
-  const [modoNuevo, setModoNuevo] = useState(false);
+  const [modoNuevo, setModoNuevo] = useState(Boolean(defaultNombreNuevo));
 
   return (
     <Field label="Proveedor">
@@ -45,6 +47,7 @@ export function CampoProveedor({
             type="text"
             name="proveedor_nuevo"
             placeholder="Nombre del proveedor"
+            defaultValue={defaultNombreNuevo}
             className="flex-1"
             autoFocus
           />

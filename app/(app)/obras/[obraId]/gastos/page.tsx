@@ -47,12 +47,20 @@ export default async function GastosPage({
           </p>
           <h1 className="text-2xl font-semibold text-foreground">Gastos</h1>
         </div>
-        <Link
-          href={`/obras/${obraId}/gastos/nuevo`}
-          className={buttonVariants("primary", "sm", "shrink-0")}
-        >
-          + Nuevo gasto
-        </Link>
+        <div className="flex shrink-0 gap-2">
+          <Link
+            href={`/obras/${obraId}/gastos/foto`}
+            className={buttonVariants("secondary", "sm")}
+          >
+            Cargar por foto
+          </Link>
+          <Link
+            href={`/obras/${obraId}/gastos/nuevo`}
+            className={buttonVariants("primary", "sm")}
+          >
+            + Nuevo gasto
+          </Link>
+        </div>
       </div>
 
       {error && (
