@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { buttonVariants } from "@/components/ui/button";
+import { Select } from "@/components/ui/field";
 import { borrarGasto } from "./actions";
 
 const CATEGORIAS: Record<string, string> = {
@@ -14,10 +15,13 @@ const CATEGORIAS: Record<string, string> = {
 
 export default async function GastosPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ obraId: string }>;
+  searchParams: Promise<{ paquete?: string }>;
 }) {
   const { obraId } = await params;
+  const { paquete: paqueteFiltro } = await searchParams;
   const supabase = await createClient();
 
   const { data: obra } = await supabase
@@ -28,13 +32,27 @@ export default async function GastosPage({
 
   if (!obra) notFound();
 
-  const { data: gastos, error } = await supabase
+  const { data: paquetes } = await supabase
+    .from("paquetes")
+    .select("id, codigo, nombre")
+    .eq("obra_id", obraId)
+    .order("codigo");
+
+  let query = supabase
     .from("gastos")
     .select(
       "id, fecha, categoria, descripcion, proveedor, monto, moneda, paquete_id, paquetes(codigo, nombre), proveedores(nombre)",
     )
     .eq("obra_id", obraId)
     .order("fecha", { ascending: false });
+
+  if (paqueteFiltro) {
+    query = query.eq("paquete_id", paqueteFiltro);
+  }
+
+  const { data: gastos, error } = await query;
+
+  const paqueteActivo = paquetes?.find((p) => p.id === paqueteFiltro);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-8 py-8">
@@ -63,13 +81,53 @@ export default async function GastosPage({
         </div>
       </div>
 
+      <form
+        action={`/obras/${obraId}/gastos`}
+        className="mb-6 flex items-end gap-3"
+      >
+        <div className="w-64">
+          <label className="mb-1 block text-sm font-medium text-foreground">
+            Filtrar por ítem
+          </label>
+          <Select name="paquete" defaultValue={paqueteFiltro ?? ""}>
+            <option value="">Todos los ítems</option>
+            {paquetes?.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.codigo} · {p.nombre}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <button
+          type="submit"
+          className={buttonVariants("secondary", "sm")}
+        >
+          Filtrar
+        </button>
+        {paqueteFiltro && (
+          <Link
+            href={`/obras/${obraId}/gastos`}
+            className="text-sm text-muted hover:text-foreground hover:underline"
+          >
+            Sacar filtro
+          </Link>
+        )}
+      </form>
+
       {error && (
         <p className="text-sm text-muted">
           Error al leer los gastos ({error.message}).
         </p>
       )}
 
-      {!error && gastos?.length === 0 && (
+      {!error && gastos?.length === 0 && paqueteFiltro && (
+        <EmptyState
+          titulo={`Sin gastos en ${paqueteActivo?.nombre ?? "este ítem"}`}
+          descripcion="Todavía no se cargó ningún gasto para este ítem."
+        />
+      )}
+
+      {!error && gastos?.length === 0 && !paqueteFiltro && (
         <EmptyState
           titulo="Todavía no hay gastos cargados"
           descripcion="Cargá el primero para empezar a ver el estado económico de la obra."
@@ -88,7 +146,7 @@ export default async function GastosPage({
           <thead>
             <tr className="border-b border-border text-left text-muted">
               <th className="py-3 pr-8 pl-3 font-medium">Fecha</th>
-              <th className="py-3 pr-8 font-medium">Paquete</th>
+              <th className="py-3 pr-8 font-medium">Ítem</th>
               <th className="py-3 pr-8 font-medium">Categoría</th>
               <th className="py-3 pr-8 font-medium">Proveedor</th>
               <th className="py-3 pr-8 font-medium">Monto</th>

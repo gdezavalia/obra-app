@@ -107,7 +107,12 @@ export default async function PaquetesPage({
                     className="py-3 pr-8"
                     style={{ paddingLeft: `${nivel * 16}px` }}
                   >
-                    {p.nombre}
+                    <Link
+                      href={`/obras/${obraId}/paquetes/${p.id}`}
+                      className="hover:text-accent hover:underline"
+                    >
+                      {p.nombre}
+                    </Link>
                   </td>
                   <td className="py-3 pr-8 text-muted">
                     {TIPOS.find((t) => t.value === p.tipo)?.label ?? p.tipo}
